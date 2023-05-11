@@ -92,3 +92,79 @@ indicators_list = [
     'Electricity production from coal sources (% of total)',
     'Electricity production from oil sources (% of total)',   
 ]
+
+
+# In[ ]:
+
+
+data = extracted_data(data_frame, indicators_list)
+
+
+# In[ ]:
+
+
+data = data.fillna(method='ffill').fillna(method='bfill')
+pivot_data = data.pivot_table(index='Country Name', columns='Indicator Name', values='2020')
+
+
+# In[ ]:
+
+
+plt.figure(figsize=(12,5))
+plt.bar(x=pivot_data.sum().index,height=pivot_data.sum().values,color='purple')
+plt.xticks(rotation=90)
+plt.title('Sum of All the Selected Indicators for Year 2020')
+plt.show()
+
+
+# In[ ]:
+
+
+co_index=pivot_data['CO2 emissions (metric tons per capita)'].sort_values(ascending=False)[0:10]
+plt.figure(figsize=(15,5))
+plt.plot(co_index.index,co_index.values)
+plt.title('Top 10 CO2 Emitors')
+plt.show()
+
+
+# In[ ]:
+
+
+electric_coal=pivot_data['Electricity production from coal sources (% of total)'].sort_values(ascending=False)[0:5]
+plt.pie(electric_coal.values,labels=electric_coal.index,autopct='%.1f%%')
+plt.title("Top 5 Countries Producing Electricity from Coal")
+plt.show()
+
+
+# In[ ]:
+
+
+re_usage=pivot_data['Renewable energy consumption (% of total final energy consumption)'].sort_values(ascending=False)[0:5]
+plt.bar(x=re_usage.index,height=re_usage.values)
+plt.title("Top Renewable Energy Consumer Countries")
+plt.show()
+
+
+# # **Clustering**
+
+# In[ ]:
+
+
+# data Normalization
+norm_data, min_value, max_value = scaler.fit_transform(pivot_data.values),np.min(pivot_data.values),np.max(pivot_data.values)
+
+# number of clusters
+cluster_count = 4
+
+# Applying KMeans
+kmeans = KMeans(n_clusters=cluster_count, random_state=0)
+cluster_labels = kmeans.fit_predict(norm_data)
+
+
+# In[ ]:
+
+
+# Add the cluster labels to the dataset
+pivot_data["Cluster"] = cluster_labels
+pivot_data.groupby("Cluster").mean()
+labels = indicators_list
