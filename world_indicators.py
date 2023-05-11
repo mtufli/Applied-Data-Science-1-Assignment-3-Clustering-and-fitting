@@ -168,3 +168,82 @@ cluster_labels = kmeans.fit_predict(norm_data)
 pivot_data["Cluster"] = cluster_labels
 pivot_data.groupby("Cluster").mean()
 labels = indicators_list
+
+
+# In[ ]:
+
+
+temp = pivot_data.groupby("Cluster").mean().T
+temp.index = labels
+temp.plot(kind="bar", figsize=(12, 5))
+plt.title("Mean of Each Indicators with respect to each Clusters")
+plt.ylabel("Mean Value")
+plt.xlabel("Indicator")
+plt.show()
+
+
+# In[ ]:
+
+
+# Selecting one country from each cluster
+pivot_data.groupby("Cluster").last()
+
+# Comparing values for each country
+pivot_data.groupby("Cluster").last().plot(kind="bar", figsize=(16, 6))
+plt.title("Each Country Cluster Standings")
+plt.ylabel("Value Measured")
+plt.show()
+
+
+# In[ ]:
+
+
+def ln_function(x, a, b):
+    return a*x + b
+
+
+# In[ ]:
+
+
+def fit_model(x_vals, y_vals, linear_func, sigma=[1.0, 1.0]):
+    popt, pcov = curve_fit(linear_func, x_vals, y_vals)
+    x_pred = np.arange(2020, 2040)
+    y_pred = ln_function(x_pred, *popt)
+
+
+
+    # Estimate confidence intervals for predicted values
+    model = sm.OLS(y_vals, sm.add_constant(x_vals))
+    fitted_model = model.fit()
+    prediction = fitted_model.get_prediction(sm.add_constant(x_pred))
+    mean_values = prediction.predicted_mean
+    lower = prediction.conf_int()[:, 0]
+    upper = prediction.conf_int()[:, 1]
+
+    #lower, upper = err_ranges(x_pred, linear_func, popt, sigma)
+    
+    print(f"Predictd data values are givne below")
+    print(y_pred)
+    
+    # plot the model function and the confidence intervals for the predictions
+    plt.figure(figsize=(12, 5))
+    plt.plot(x_vals, y_vals, '*', label='Given Data',color='green')
+    plt.plot(x_pred, y_pred, 'r-', label='linearly Fittited Line',color='black')
+    plt.fill_between(x_pred, lower, upper, color='black', alpha=0.2, label='CI')
+    plt.legend(loc='best')
+    plt.title("Urban population Prediction")
+    plt.xlabel('Year')
+    plt.ylabel('Total Population')
+    plt.show()
+
+
+# In[ ]:
+
+
+# extract the data we want to fit the model to
+data_points = countries[("World", "Urban population")]
+
+X_values = data_points.index.astype("int")
+y_values = data_points.values.astype("float64")
+
+fit_model(X_values, y_values, ln_function)
